@@ -127,11 +127,16 @@ def log_actions(stream_plan, action_plan, iteration):
         actions.append({
             'name': a.name, 'args': [str(n) for n in a.args]
         })
+    
+    if isinstance(plans, dict):
+        plans = list(plans.values()) # Added by Raghav to convert to list
     plans.append(actions)
     plans.append([])
 
     # with open(json_file, 'a+') as f:
         # json.dump(plans, f, indent=3)
+    import sys
+    sys.path.append("/home2/raghav.arora/llm_tamp/kitchen-worlds/pybullet_planning/")
     from pybullet_tools.logging_utils import dump_json
     dump_json(plans, json_file, sort_dicts=False)
 
