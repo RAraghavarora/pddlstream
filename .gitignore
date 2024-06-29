@@ -6,3 +6,6 @@ statistics
 gurobi.log
 .DS_Store
 collisions.pkl
+
+*.~undo-tree~
+*~
