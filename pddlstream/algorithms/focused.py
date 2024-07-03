@@ -402,7 +402,11 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={},
 
             if isinstance(action_plan, list):
                 from pybullet_tools.bullet_utils import print_action_plan
-                action_plan_str = print_action_plan(action_plan, stream_plan, world=world)
+                try:
+                    action_plan_str = print_action_plan(action_plan, stream_plan, world=world)
+                except AttributeError:
+                    # world is None (Added by raghav)
+                    action_plan_str = 'None'
             else:
                 action_plan_str = 'None'
 
