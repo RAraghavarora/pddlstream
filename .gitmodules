@@ -1,6 +1,7 @@
 [submodule "examples/pybullet/utils"]
 	path = examples/pybullet/utils
-	url = https://github.com/caelan/ss-pybullet
+	url = git@github.com:RAraghavarora/pybullet_planning.git
+	branch = rag_ex_utils
 [submodule "downward"]
 	path = downward
 	url = https://github.com/caelan/downward.git
