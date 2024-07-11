@@ -143,7 +143,7 @@ def get_kitchen_task(arm='left', grasp_type='top'):
     set_arm_conf(pr2, other_arm, arm_conf(other_arm, REST_LEFT_ARM))
     close_arm(pr2, other_arm)
 
-    table, cabbage, sink, stove = create_kitchen()
+    table, cabbage, sink, stove = create_kitchen() #R Table is minifridge
     floor = get_bodies()[1]
     class_from_body = {
         table: 'table',
@@ -151,8 +151,9 @@ def get_kitchen_task(arm='left', grasp_type='top'):
         sink: 'sink',
         stove: 'stove',
     } # TODO: use for debug
+    # We need to add minifridge::storage, minifridge::joint, minifridge::link to the predicates
     movable = [cabbage]
-    surfaces = [table, sink, stove]
+    surfaces = [table, sink, stove, 'minifridge::storage']
     rooms = [floor]
     from pybullet_planning.pybullet_tools.camera_utils import set_camera_target_robot
     set_camera_target_robot(pr2)
