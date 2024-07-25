@@ -153,7 +153,7 @@ def get_kitchen_task(arm='left', grasp_type='top'):
     } # TODO: use for debug
     # We need to add minifridge::storage, minifridge::joint, minifridge::link to the predicates
     movable = [cabbage]
-    surfaces = [table, sink, stove, 'minifridge::storage']
+    surfaces = [table, sink, stove]
     rooms = [floor]
     from pybullet_planning.pybullet_tools.camera_utils import set_camera_target_robot
     #set_camera_target_robot(pr2)
