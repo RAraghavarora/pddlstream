@@ -143,7 +143,13 @@ def get_kitchen_task(arm='left', grasp_type='top'):
     set_arm_conf(pr2, other_arm, arm_conf(other_arm, REST_LEFT_ARM))
     close_arm(pr2, other_arm)
 
-    table, cabbage, sink, stove = create_kitchen() #R Table is minifridge
+    kit_output = create_kitchen(robot=pr2)
+    # table, cabbage, sink, stove = create_kitchen()
+    if len(kit_output) == 4:
+        table, cabbage, sink, stove = kit_output
+        world = None
+    else:
+        table, cabbage, sink, stove, world = kit_output
     floor = get_bodies()[1]
     class_from_body = {
         table: 'table',
@@ -158,7 +164,7 @@ def get_kitchen_task(arm='left', grasp_type='top'):
     from pybullet_planning.pybullet_tools.camera_utils import set_camera_target_robot
     #set_camera_target_robot(pr2)
 
-    return BeliefTask(
+    belief_task = BeliefTask(
         robot=pr2, arms=[arm], grasp_types=[grasp_type],
         class_from_body=class_from_body,
         movable=movable, surfaces=surfaces, rooms=rooms,
@@ -168,6 +174,8 @@ def get_kitchen_task(arm='left', grasp_type='top'):
         #goal_on=[(cabbage, table)],
         goal_on=[(cabbage, sink)],
     )
+    belief_task.world = world
+    return belief_task
 
 def get_problem1(localized='rooms', **kwargs):
     task = get_kitchen_task()
