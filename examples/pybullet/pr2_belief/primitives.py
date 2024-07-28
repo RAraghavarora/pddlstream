@@ -13,7 +13,7 @@ from examples.pybullet.utils.pybullet_tools.utils import link_from_name, create_
     wait_for_duration, unit_pose, remove_body, is_center_stable, get_body_name, get_name, point_from_pose, \
     plan_waypoints_joint_motion, pairwise_collision, plan_direct_joint_motion, BodySaver, set_joint_positions, \
     INF, get_length, multiply, wait_for_user, LockRenderer, set_color, RED, GREEN, apply_alpha, dump_body, \
-    get_link_subtree, child_link_from_joint, get_link_name
+    get_link_subtree, child_link_from_joint, get_link_name, get_joint_positions, get_max_limit, get_extend_fn, ConfSaver
 
 VIS_RANGE = (0.5, 1.5)
 REG_RANGE = (0.5, 1.5)
@@ -332,3 +332,81 @@ class Register(Command):
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, get_body_name(self.robot),
                                   get_name(self.body))
+
+class MoveArm(Command):
+    def __init__(self, conf):
+        self.conf = conf
+
+    def apply(self, **kwargs):
+        set_joint_positions(self.conf.body, self.conf.joints, self.conf.values)
+        yield
+
+class GripperCommand(Command):
+    def __init__(self, arm, task, position=None, extent=None, teleport=False):
+        self.arm = arm
+        self.position = position
+        self.extent = extent  ## 1 means fully open, 0 means fully closed
+        self.teleport = teleport
+        # self.robot = task.world.robot
+        self.task = task
+
+    def get_gripper_path(self):
+        robot = self.task.world.robot
+        joints = robot.get_gripper_joints(self.arm)
+
+        start_conf = get_joint_positions(robot, joints)
+
+        state_objects = self.task.movable + self.task.surfaces + self.task.rooms
+        ## get width from extent
+        if self.extent is not None:
+            gripper_joint = robot.get_gripper_joints(self.arm)[0]
+            self.position = get_max_limit(robot, gripper_joint)
+        else:  ## if self.position == None:
+            bodies = [b for b in state_objects if isinstance(b, int) and b != robot.body]
+            joints = robot.get_gripper_joints(self.arm)
+            with ConfSaver(robot.body):
+                self.position = robot.close_until_collision(self.arm, joints, bodies=bodies)
+            print(f"   [GripperAction] !!!! gripper {self.arm} is closed to {round(self.position, 3)} until collision")
+            # self.position = 0.5  ## cabbage, artichoke
+            # self.position = 0.4  ## tomato
+            # self.position = 0.2  ## zucchini
+            # self.position = 0.14  ## bottle
+
+        end_conf = robot.get_gripper_end_conf(self.arm, self.position)
+        if self.teleport:
+            path = [start_conf, end_conf]
+        else:
+            extend_fn = get_extend_fn(robot, joints)
+            path = [start_conf] + list(extend_fn(start_conf, end_conf))
+        return path
+
+    def apply(self):
+        robot = self.task.world.robot
+        joints = robot.get_gripper_joints(self.arm)
+
+        path = self.get_gripper_path()
+        for positions in path:
+            set_joint_positions(robot, joints, positions)
+
+        yield
+
+# class AttachObjectCommand(Command):
+#     def __init__(self, arm, grasp, body, task, verbose=True):
+#         self.arm = arm
+#         self.grasp = grasp
+#         self.body = body
+#         self.verbose = verbose
+#         self.task = task
+
+#     def apply(self):
+#         robot = self.task.world.robot
+#         parent = state.robot
+#         link = robot.get_attachment_link(self.arm)
+#         obj = self.get_body()
+#         if isinstance(obj, int):
+#             obj = self.task.world.get_object(self.get_body())
+#         added_attachments = add_attachment_in_world(state=state, obj=obj, parent=parent, parent_link=link,
+#                                                     attach_distance=None, verbose=False, OBJ=False, debug=debug)
+#         new_attachments = dict(state.attachments)
+#         new_attachments.update(added_attachments)
+#         yield
