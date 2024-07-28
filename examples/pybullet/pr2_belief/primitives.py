@@ -337,7 +337,7 @@ class MoveArm(Command):
     def __init__(self, conf):
         self.conf = conf
 
-    def apply(self, **kwargs):
+    def apply(self, *args, **kwargs):
         set_joint_positions(self.conf.body, self.conf.joints, self.conf.values)
         yield
 
@@ -354,7 +354,7 @@ class GripperCommand(Command):
         robot = self.task.world.robot
         joints = robot.get_gripper_joints(self.arm)
 
-        start_conf = get_joint_positions(robot, joints)
+        start_conf = get_joint_positions(robot.body, joints)
 
         state_objects = self.task.movable + self.task.surfaces + self.task.rooms
         ## get width from extent
@@ -376,37 +376,38 @@ class GripperCommand(Command):
         if self.teleport:
             path = [start_conf, end_conf]
         else:
-            extend_fn = get_extend_fn(robot, joints)
+            extend_fn = get_extend_fn(robot.body, joints)
             path = [start_conf] + list(extend_fn(start_conf, end_conf))
         return path
 
-    def apply(self):
+    def apply(self, *args, **kwargs):
         robot = self.task.world.robot
         joints = robot.get_gripper_joints(self.arm)
 
         path = self.get_gripper_path()
         for positions in path:
-            set_joint_positions(robot, joints, positions)
+            set_joint_positions(robot.body, joints, positions)
 
         yield
 
-# class AttachObjectCommand(Command):
-#     def __init__(self, arm, grasp, body, task, verbose=True):
-#         self.arm = arm
-#         self.grasp = grasp
-#         self.body = body
-#         self.verbose = verbose
-#         self.task = task
+from examples.pybullet.utils.pybullet_tools.rag_utils import add_attachment_in_world
+class AttachObjectCommand(Command):
+    def __init__(self, arm, grasp, body, state, verbose=True):
+        self.arm = arm
+        self.grasp = grasp
+        self.body = body
+        self.verbose = verbose
+        self.state = state
 
-#     def apply(self):
-#         robot = self.task.world.robot
-#         parent = state.robot
-#         link = robot.get_attachment_link(self.arm)
-#         obj = self.get_body()
-#         if isinstance(obj, int):
-#             obj = self.task.world.get_object(self.get_body())
-#         added_attachments = add_attachment_in_world(state=state, obj=obj, parent=parent, parent_link=link,
-#                                                     attach_distance=None, verbose=False, OBJ=False, debug=debug)
-#         new_attachments = dict(state.attachments)
-#         new_attachments.update(added_attachments)
-#         yield
+    def apply(self, *args, **kwargs):
+        robot = self.state.task.world.robot
+        parent = robot
+        link = robot.get_attachment_link(self.arm)
+        obj = self.body
+        if isinstance(obj, int):
+            obj = self.state.task.world.get_object(self.get_body())
+        added_attachments = add_attachment_in_world(self.state.task.world, obj=obj, parent=parent, parent_link=link,
+                                                    attach_distance=None, verbose=False, OBJ=False)
+        new_attachments = dict(self.state.attachments)
+        new_attachments.update(added_attachments)
+        yield
